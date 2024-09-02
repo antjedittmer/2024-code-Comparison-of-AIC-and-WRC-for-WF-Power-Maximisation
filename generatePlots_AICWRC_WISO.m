@@ -1,7 +1,7 @@
+function generatePlots_AICWRC_WISO(plotAll)
 %% Code for 'Data driven Decentralized Algorithm for Wind Farm Control'
 % Code illustrating ideas in 'Data driven Decentralized Algorithm for Wind
 % Farm Control with Population-Games Assistance'
-function generatePlots_AICWRC_WISO(plotAll)
 
 if ~nargin
     clc; clear; close all;
@@ -9,13 +9,24 @@ if ~nargin
 end
 
 % figDir
-figDir ='figDirETC_1';
+figDir = 'figDirETC_1';
 if ~isfolder(figDir)
     mkdir(figDir)
 end
 
+% dataDir
+datDir = 'DataOutAICWRC';
+if ~isfolder(datDir)
+    mkdir(datDir)
+end
+
+
 loadAIC = 1;
 loadWRC = 1;
+printText = 0;
+
+pWTWRCfile = fullfile(datDir,'pWTopt_WRC.mat');
+pWTAICfile = fullfile(datDir,'pWTopt_AIC.mat');
 
 
 mainDir = fileparts(mfilename('fullpath'));
@@ -23,7 +34,7 @@ dirCode = fullfile(mainDir,'ParkGaussianFlorisFASTFarm');
 addpath(dirCode)
 dirFigures = fullfile(mainDir,figDir);
 dirProject = fileparts(fileparts(fileparts(dirCode))); % this is my main project folder
-dirFloris = fullfile(dirProject,'floris','examples');
+dirFloris =  'DataInFloris'; %fullfile(dirProject,'floris','examples');
 
 dirFASTFarm = fullfile(dirCode,'BinduFASTFarm');
 dirFASTFarmFigDir = fullfile(dirFASTFarm, 'Figures');
@@ -39,10 +50,6 @@ rho = 1.225; % air density
 D   = 126; % diameter of each turbine assumed to be same
 A   = pi * (D/2)^2; % area swept by the rotor
 b   = 0.075; %0.035;% % model parameters wake interaction
-gamma = 0.99; %tunable parameter for all strategies
-n = 3;
-tau = 0.01;
-epsilon = eps;
 Vinf  = 8; % wind unaffected by wind farm
 
 % consider we have formulation like this (wind_dir = 0 deg )
@@ -434,8 +441,8 @@ print(fullfile(figDir,figname), '-depsc');
 %% m turbines optimization dP/dt
 mEnd = 15;
 
-if exist('pWTopt_AIC.mat','file') == 2 && loadAIC
-    load('pWTopt_AIC.mat','PT_opt','PT_greedy','aCell');
+if exist(pWTAICfile,'file') == 2 && loadAIC
+    load(pWTAICfile,'PT_opt','PT_greedy','aCell');
 else
     dPsum = 0;
 
@@ -460,12 +467,12 @@ else
         %ratioP(m) = (PT_opt(m) - PT_greedy(m))/PT_greedy(m);
         aCell{m} = a_opt;
     end
-    save('pWTopt_AIC.mat','PT_opt','PT_greedy','aCell');
+    save(pWTAICfile,'PT_opt','PT_greedy','aCell');
 end
 ratioP = (PT_opt - PT_greedy)./PT_greedy;
 
-if exist('pWTopt_WRC.mat','file') == 2 && loadWRC
-    load('pWTopt_WRC.mat','Popt','P0','pWTopt')
+if exist(pWTWRCfile,'file') == 2 && loadWRC
+    load(pWTWRCfile,'Popt','P0','pWTopt')
 
 else
     nT = 10;
@@ -481,7 +488,7 @@ else
         Popt(idx) = abs(P0a);
         P0(idx) = abs(maxPowerYawSeveralWT1(0 * pWTopt{idx}));
     end
-    save('pWTopt_WRC.mat','Popt','P0','pWTopt')
+    save(pWTWRCfile,'Popt','P0','pWTopt')
 
 
 end
@@ -503,8 +510,8 @@ xlabel('No. wind turbines (-)')
 
 strName = 'AICImprovement';
 
-print(gcf,fullfile(strName), '-dpng');
-print(gcf,fullfile(strName), '-depsc');
+print(gcf, fullfile(figDir,strName), '-dpng');
+print(gcf, fullfile(figDir,strName), '-depsc');
 
 % Two turbines: Angle and power increase
 %    18.6065    0.0000
@@ -520,7 +527,6 @@ print(gcf,fullfile(strName), '-depsc');
 %
 % P greedy 3.07 MW, P opt 3.71 MW: 20.71%
 
-% save('pWTopt_WRC.mat','Popt','P0','pWTopt');
 
 perMoreWRC = 100*(Popt - P0)./P0;
 ratioP = (PT_opt - PT_greedy)./PT_greedy;
@@ -533,6 +539,8 @@ WRC_floris = [ 7.46446676 16.4140829  20.43789747 23.01275746 25.24222557 27.107
     28.59286803 29.99725078 31.40874593];
 
 mEnd = length(perMoreWRC);
+
+%% Plot comparison AIC WRC
 figure; plot(2:mEnd,ratioP(2:mEnd)*100,'o-',2:mEnd, perMoreWRC(2:mEnd),'*-');
 hold on; plot(2:mEnd,WRC_floris,'+--', 'color',cl(2,:))
 
@@ -732,7 +740,9 @@ nexttile
 contourf(ldyy(1,idxY),ldxx2(idxX,1)',sol.u(idxX,idxY),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
 colormap(hot); caxis([min(min(sol.u))-2 u_Inf*1.05]);  hold on; colorbar;
 xlabel(yStr); ylabel('x (m)')
+if printText == 1
 text(min(ldyy(1,idxY))*0.95, max(ldxx2(idxX,1))*0.95, sprintf('P_{WF} %2.2f MW',tmp2.farm_power_baseline/10^6),'Fontsize',9)
+end
 
 % set(hc,'TickLabelInterpreter','Latex','FontSize',fs);
 axis equal; axis tight;
@@ -742,7 +752,9 @@ nexttile
 contourf(ldyy(1,idxY),ldxx2(idxX,1)',sol.u(idxX,idxY),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
 colormap(hot); caxis([min(min(sol.u))-2 u_Inf*1.05]);  hold on; colorbar;
 xlabel(yStr);
+if printText == 1
 text(min(ldyy(1,idxY))*0.95, max(ldxx2(idxX,1))*0.95, sprintf('P_{WF}: %2.2f MW',tmp2.farm_power_opt/10^6),'Fontsize',9)
+end
 %set(hc,'TickLabelInterpreter','Latex','FontSize',fs);
 axis equal; axis tight;
 
@@ -761,7 +773,9 @@ sol.u = tmp.vecU_opt';nexttile
 contourf(ldyy(1,idxY),ldxx2(idxX,1)',sol.u(idxX,idxY),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
 colormap(hot); caxis([min(min(sol.u))-2 u_Inf*1.05]);  hold on; hc = colorbar;
 xlabel(yStr);
+if printText == 1
 text(min(ldyy(1,idxY))*0.95, max(ldxx2(idxX,1))*0.95, sprintf('%2.2f MW',tmp.farm_power_opt/10^6),'Fontsize',9)
+end
 axis equal; axis tight;
 
 ta = annotation('textarrow'); fs = 12; % plot the air speed arrow

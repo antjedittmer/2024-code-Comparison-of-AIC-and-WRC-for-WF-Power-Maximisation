@@ -1,7 +1,7 @@
 build/
 codegen/
 slprj/
-figDir/
+fig*/
 DataIn*/
 DataOut*/
 DataT*/
