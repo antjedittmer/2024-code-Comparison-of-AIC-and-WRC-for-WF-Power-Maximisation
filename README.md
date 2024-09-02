@@ -14,7 +14,7 @@ It may be used to recreate the simulation results and figures from the paper. To
 Running the simulation for the first time takes roughly 20 minutes using a laptop with an 11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz processor.
 
 ## Optimization Environment
-FLORIS (FLOw Redirection and Induction in Steady State)[on GitHub] (https://github.com/NREL/floris) is utilized for yaw optimization in steady-state. 
+FLORIS (FLOw Redirection and Induction in Steady State)[on GitHub](https://github.com/NREL/floris) is utilized for yaw optimization in steady-state. 
 
 ## Simulation Environment WFSim
 
