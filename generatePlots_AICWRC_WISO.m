@@ -392,7 +392,6 @@ set(0,'DefaultAxesFontSize', 12);
 set(0,'DefaultTextFontSize',12);
 set(0,'DefaultLineLineWidth',0.7);
 
-%colorbar = gray;
 
 figure(nF); nF = nF +1;
 
@@ -711,8 +710,6 @@ end
 
 %% Floris wake plot
 
-
-
 idx2 = contains(whatFloris.mat,'2') & contains(whatFloris.mat,'cc');
 mat2 = whatFloris.mat{idx2};
 tmp = load(fullfile(dirFloris,mat2));
@@ -733,7 +730,7 @@ set(0,'DefaultTextFontSize',12);
 set(0,'DefaultLineLineWidth',0.7);
 
 tiledlayout(1,3,'TileSpacing','compact')
-set(gcf,'position',[pos0(1:3),pos0(4)*1.05])
+set(gcf,'position',[pos0(1:3),pos0(4)*1.11])
 
 yStr = 'y (m)';
 nexttile
@@ -780,7 +777,7 @@ axis equal; axis tight;
 
 ta = annotation('textarrow'); fs = 12; % plot the air speed arrow
 ta.FontSize = 11;
-ta.Position = [0.20 0.17 0 0.035];
+ta.Position = [0.20 0.18 0 0.035];
 tmpStr = sprintf('%s%2.1f',' $V_{\infty}$= 8 m/s'); %'$V_{\infty}$'; %
 ta.Text.String = strrep(tmpStr, '$','');
 ta.Text.Interpreter = 'tex';
