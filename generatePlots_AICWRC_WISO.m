@@ -20,7 +20,7 @@ if ~isfolder(datDir)
     mkdir(datDir)
 end
 
-loadAIC = 0;
+loadAIC = 1;
 loadWRC = 1;
 printText = 0; % prints the text 
 
@@ -742,7 +742,7 @@ set(0,'DefaultTextFontSize',12);
 set(0,'DefaultLineLineWidth',0.7);
 
 tiledlayout(1,3,'TileSpacing','compact')
-set(gcf,'position',[pos0(1:3),pos0(4)*1.11])
+set(gcf,'position',[pos0(1:3),pos0(4)*1.08])
 
 vecX2 = ldyy(1,idxY);
 vecY2 = ldxx2(idxX,1)';
@@ -784,13 +784,13 @@ u_Inf = max(sol.u(:));
 vecx3 = ldyy3(1,idxY3);
 vecy3 = ldxx2_3(idxX3,1)';
 idx3_2 = vecy3 <= vecY2(end);
-idxX3_2 = idxX3; %(idx3_2);
+idxX3_2 = idxX3(idx3_2);
 %vecy3_2 = vecy3()
 
 % [vecy3_2,idx3_2]  =  intersect(vecy3,vecY2);
 
-sol.u = tmp.vecU_opt';nexttile
-contourf(vecx3,ldxx2_3(idxX3_2,1)',sol.u(idxX3_2,idxY3),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
+sol3.u = tmp3.vecU_opt';nexttile
+contourf(vecx3,ldxx2_3(idxX3_2,1)',sol3.u(idxX3_2,idxY3),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
 colormap(hot); caxis([min(min(sol.u))-2 u_Inf*1.05]);  hold on; hc = colorbar;
 xlabel(yStr);
 if printText == 1
