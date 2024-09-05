@@ -11,13 +11,17 @@ accepted at the 23rd Wind & Solar Integration Workshop, 2024.
 It may be used to recreate the simulation results and figures from the paper. To do so, run the script `mainGeneratePlotsWISO.m`.
 
 Running the simulation for the first time takes roughly 20 minutes using a laptop with an 11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz processor. 
-This is due to data in WFSim beiing generated to design the Koopman matrix used in the Koopman MPC. Once the Koopman matrix is generated the figures are generated in approximately one minute.
+This is due to data in WFSim beiing generated to design the Koopman matrix used in the Koopman MPC. Once the Koopman matrix is available, the figures are generated in approximately 20 seconds.
 The output of the FLORIS optimization and the FAST.FArm simulation is provided as *.mat files.  
+
+This paper uses the same slightly modified WFSim environment and MPC design which we describe in  
+
+[Koopman Model Predictive Control for Wind Farm Yield Optimization with Combined Thrust and Yaw Control](https://www.sciencedirect.com/science/article/pii/S2405896323014209)
 
 ## Simulation Environment WFSim
 
 The simulations WindFarmSimulator (WFSim) developed by Doekemeijer and Boersma [on GitHub](https://github.com/TUDelft-DataDrivenControl/WFSim) is utilized.
-WFSim is used both for data generation in open loop and for closed loop testing.
+WFSim is used both for data generation in open loop to design the Koopman matrix and for closed loop testing.
 
 ## Optimization Environment
 FLORIS (FLOw Redirection and Induction in Steady State) from NREL (National Renewable Energy Laboratory) is available [on GitHub](https://github.com/NREL/floris) is utilized for yaw optimization in steady-state. 
