@@ -9,7 +9,16 @@ idxDotFast = strfind(outdataName,'.');
 idxm = strfind(outdataName,'m');
 outmidName = outdataName(idxDotFast+1:idxm(2));
 
-%% Set path for Matlab plot files and outputs
+matfileName = 'genPwrMat.mat';
+
+
+%% Load data or read from out files
+if exist(matfileName,'file') == 2
+load(matfileName ,'noYaw','timeVec','genPwrFarm','genPwrMatrix','towerBM*Matrix','towerM*Matrix');
+
+else
+
+    %% Set path for Matlab plot files and outputs
 plotDir = fileparts(mfilename('fullpath'));
 matlabDir = fileparts(plotDir);
 parentDir = fileparts(matlabDir);
@@ -21,7 +30,6 @@ outdataPath = fullfile(plotDir,outdataName);
 disp(['FASTFarm output files in dir: ', outdataPath]);
 disp(['Analysis script in: ',plotDir])
 
-%% Load data or read from out files
 
 % Get information for *.out data (information also used for plotting
 oudataDir = dir(outdataPath);
@@ -174,15 +182,13 @@ for iWT = 1:nT
 
 end
 genPwrFarm = sum(genPwrMatrix,3);
-
-%% %
-xlabelStr = 'Yaw $\gamma$ (deg)';
-ylabelStrP = '$P$ (kW)';
-ylabelStrM = '$M_{TwrY,B}$ (kNm)';
-
+t0 = 160;
+timeVec = (aTable.Time > t0);
+save(matfileName,'noYaw','timeVec','genPwrFarm','genPwrMatrix','towerBM*Matrix','towerM*Matrix');
+end
 
 
-%% 
+%% Create figure folder and save default plotting properties
 dirFig = 'Figures';
 if ~isdir(dirFig) %#ok<ISDIR> 
     mkdir(dirFig);
@@ -192,325 +198,41 @@ dAFS = get(0,'DefaultAxesFontSize');
 dTFS = get(0,'DefaultTextFontSize');
 dLLw = get(0,'DefaultLineLineWidth');
 
-set(0,'DefaultAxesFontSize', 12);
-set(0,'DefaultTextFontSize',12);
-set(0,'DefaultLineLineWidth',0.7);
- fs = 12; 
+% Create labels and title string for plots
+xlabelStr = 'Yaw $\gamma$ (deg)';
+ylabelStr.P = '$P$ (kW)';
+ylabelStr.M = '$M_{TwrY,B}$ (kNm)';
 
-figure(1);
-t0 = 160;
-timeVec = (aTable.Time > t0);
+xlabelStrTex = strrep(xlabelStr,'$','');
+ylabelStr.MTex  = strrep(ylabelStr.M ,'$','');
+ylabelStr.PTex  = strrep(ylabelStr.P ,'$','');
 
-subplot(2,1,1)
-plot(noYaw,squeeze(mean(genPwrMatrix(timeVec,:,1:nT))),'-',noYaw, mean(genPwrFarm(timeVec,:)),'k-');
-grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-%xlabel(xlabelStr,'interpreter','latex'); 
-ylabel(ylabelStrP,'interpreter','latex');
-legend('WT1','WT2','WF','Location','SouthEast','Orientation','Horizontal','interpreter','latex')
-%title(sprintf('Mean values power vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-set(gca,'TickLabelInterpreter','Latex','FontSize',fs)
-
-subplot(2,1,2)
-plot(noYaw,abs(squeeze(mean(towerBMxMatrix(timeVec,:,1:nT)))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrM,'interpreter','latex');xlabel(xlabelStr,'interpreter','latex');
-legend('WT1','WT2','Location','East','Orientation','Horizontal','interpreter','latex')
-%title(sprintf('Tower base moment caused by side-to-side forces: %2.1f to %2.1f s', t0,aTable.Time(end)))
-set(gca,'TickLabelInterpreter','Latex','FontSize',fs)
-
-filenamepng = matlab.lang.makeValidName(outmidName);
-saveas(gcf,fullfile(dirFig,filenamepng), 'fig')
-print(gcf,fullfile(dirFig,filenamepng), '-dpng');
-print(gcf,fullfile(dirFig,filenamepng), '-depsc');
-
-%% Reset plotting properties to default and plot all tower base moments
-set(0,'DefaultAxesFontSize',dAFS);
-set(0,'DefaultTextFontSize',dTFS);
-set(0,'DefaultLineLineWidth',dLLw);
-
-figure(2);
-
-% save('genPwrMat.mat','genPwrMatrix', 'genPwrFarm', 'timeVec')
 cl = lines;
-
 titleStr = ['Mean values power and moments vs. yaw',': WF{\color[rgb]{',num2str(cl(1,:)),'} WT1 ',...
     '\color[rgb]{',num2str(cl(2,:)),'}WT2}'];
 
-t0 = 160;
-
-xlabelStrTex = strrep(xlabelStr,'$','');
-ylabelStrPTex = strrep(ylabelStrP,'$','');
-
-nAx = 3;
-
-subplot(nAx+1,1,1)
-FarmPwrAtYaw = mean(genPwrFarm(timeVec,:));
-powerIncreaseInPerc = 100*(max(FarmPwrAtYaw) - min(FarmPwrAtYaw))/min(FarmPwrAtYaw);
-% 2.30 MW, 2.52 MW,  increase 9.7 %
-
-plot(noYaw,squeeze(mean(genPwrMatrix(timeVec,:,1:nT))),'-',noYaw, mean(genPwrFarm(timeVec,:)),'k-');
-grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrPTex); %xlabel(xlabelStrTex);
-
-title(titleStr)
-strCell = {'x','y','z'};
-
-for idx = 1:nAx
-
-    ylabelStrMtex = strrep(strrep(ylabelStrM,'$',''),'Y',upper(strCell{idx}));
-    eval(['temp = towerBM',strCell{idx},'Matrix;'])
-
-    subplot(nAx+1, 1,1+idx)
-    plot(noYaw,abs(squeeze(mean(temp(timeVec,:,1:nT)))));
-    grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.01])
-    ylabel(ylabelStrMtex);
-end
-
-posDefault = get(gcf, 'position');
-set(gcf, 'position', [posDefault(1:3),posDefault(4)*1.1]);
-
-xlabel(xlabelStrTex);
-
-filenamepng = matlab.lang.makeValidName([outmidName, 'TwrB']);
-saveas(gcf,fullfile(dirFig,filenamepng), 'fig')
-print(gcf,fullfile(dirFig,filenamepng), '-dpng');
-print(gcf,fullfile(dirFig,filenamepng), '-depsc');
-
-%% 
-figure(3)
-
-subplot(nAx+1,1,1)
-FarmPwrAtYaw = mean(genPwrFarm(timeVec,:));
-powerIncreaseInPerc = 100*(max(FarmPwrAtYaw) - min(FarmPwrAtYaw))/min(FarmPwrAtYaw);
-
-% 2.30 MW, 2.52 MW, increase 9.7 %
-
-plot(noYaw,squeeze(mean(genPwrMatrix(timeVec,:,1:nT))),'-',noYaw, mean(genPwrFarm(timeVec,:)),'k-');
-grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrPTex); %xlabel(xlabelStrTex);
-% legend('WT1','WT2','WF','Location','SouthEast','Orientation','Horizontal','interpreter','latex')
-% title(sprintf('Mean values power vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-title({titleStr,'Tower base: solid lines, top: dashed lines'})
-
-strCell = {'x','y','z'};
-
-for idx = 1:nAx
-
-    ylabelStrMtex = strrep(strrep(ylabelStrM,'$',''),'Y',upper(strCell{idx}));
-    eval(['temp = towerBM',strCell{idx},'Matrix;'])
-    tempVec = abs(squeeze(mean(temp(timeVec,:,1:nT))));
-
-    eval(['tempT = towerM',strCell{idx},'Matrix;']);
-    tempTVec = abs(squeeze(mean(tempT(timeVec,:,1:nT))));
-
-    subplot(nAx+1, 1,1+idx)
-    plot(noYaw,tempVec(:,1),'color',cl(1,:))
-    hold on;
-    plot(noYaw,tempVec(:,2),'color',cl(2,:))
-    plot(noYaw,tempTVec(:,1),'--','color',max(cl(1,:) -0.2,0),'linewidth',2);
-    plot(noYaw,tempTVec(:,2),'--','color',max(cl(2,:) -0.2,0),'linewidth',2);
-    hold off;
-    
-    ylabelStrMTtex = strrep(ylabelStrMtex,',B','');
-
-    grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.01])
-    ylabel(ylabelStrMTtex);
-end
-
-posDefault = get(gcf, 'position');
-set(gcf, 'position', [posDefault(1:3),posDefault(4)*1.3]);
-
-xlabel(xlabelStrTex);
-
-filenamepng = matlab.lang.makeValidName([outmidName, 'TwrBTinOne']);
-saveas(gcf,fullfile(dirFig,filenamepng), 'fig')
-print(gcf,fullfile(dirFig,filenamepng), '-dpng');
-print(gcf,fullfile(dirFig,filenamepng), '-depsc');
-
-
-%%
-
-figure(4)
-subplot(4+3,1,1)
-plot(noYaw,squeeze(mean(genPwrMatrix(timeVec,:,1:nT))),'-',noYaw, mean(genPwrFarm(timeVec,:)),'k-');
-grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrPTex); %xlabel(xlabelStrTex);
-% legend('WT1','WT2','WF','Location','SouthEast','Orientation','Horizontal','interpreter','latex')
-% title(sprintf('Mean values power vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-title(titleStr)
-
-strCell = {'x','y','z'};
-
-for idx = 1:3
-
-    ylabelStrMtex = strrep(strrep(ylabelStrM,'$',''),'Y',upper(strCell{idx}));
-    eval(['temp = towerBM',strCell{idx},'Matrix;'])
-
-    subplot(4+3,1,1+idx)
-    plot(noYaw,abs(squeeze(mean(temp(timeVec,:,1:nT)))));
-    grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-    ylabel(ylabelStrMtex);
-
-    eval(['tempT = towerM',strCell{idx},'Matrix;']);
-    ylabelStrMTtex = strrep(ylabelStrMtex,',B',',T');
-
-    subplot(4+3,1,4+idx)
-    plot(noYaw,abs(squeeze(mean(tempT(timeVec,:,1:nT)))));
-    grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-    ylabel(ylabelStrMTtex);
-
-end
-
-posDefault = get(gcf, 'position');
-set(gcf, 'position', [posDefault(1:3),posDefault(4)*2.4]);
-
-xlabel(xlabelStrTex);
-
-filenamepng = matlab.lang.makeValidName([outmidName, 'TwrBTwrT']);
-saveas(gcf,fullfile(dirFig,filenamepng), 'fig')
-print(gcf,fullfile(dirFig,filenamepng), '-dpng');
-print(gcf,fullfile(dirFig,filenamepng), '-depsc');
-
-
-
-return;
-%% Plots Power vs. yaw
-
-% Set plotting properties
-dAFS = get(0,'DefaultAxesFontSize');
-dTFS = get(0,'DefaultTextFontSize');
-dLLw = get(0,'DefaultLineLineWidth');
-
-set(0,'DefaultAxesFontSize', 14);
-set(0,'DefaultTextFontSize',14);
-set(0,'DefaultLineLineWidth',1.4);
-
-t0 = 160;
-timeVec = (aTable.Time > t0);
-
-hf = figure(1);
-xlabelStr = 'yaw (deg)';
-ylabelStrP = 'power (W)';
-
-plot(noYaw,squeeze(genPwrMatrix(end,:,1:nT)),noYaw,genPwrFarm(end,:),'k');
-grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrP);xlabel(xlabelStr);
-legend('WT1','WT2','WF','Location','SouthEast')
-title(sprintf('Last sample power at %2.1f s vs. yaw',aTable.Time(end)))
-filenamepng = sprintf('PowerVsYawFASTFarmExample');
-print(gcf,filenamepng, '-dpng');
-
-hf = figure(hf.Number + 1);
-plot(noYaw,squeeze(mean(genPwrMatrix(timeVec,:,1:nT))),'-',noYaw, mean(genPwrFarm(timeVec,:)),'k-');
-grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-xlabel(xlabelStr); ylabel(ylabelStrP);
-legend('WT1','WT2','WF','Location','SouthEast')
-title(sprintf('Mean values power vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-%% Plot MMoP
-hf = figure(hf.Number + 1);
-ylabelStrP = 'MMoP (kNm)';
-
-plot(noYaw,abs(squeeze(rootMomentsMatrix(end,:,1:nT))));
-grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrP);xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('Last sample MOoP at %2.1f s vs. yaw',aTable.Time(end)))
-
-hf = figure(hf.Number + 1);
-plot(noYaw,abs(squeeze(mean(rootMomentsMatrix(timeVec,:,1:nT)))));
-grid on; axis tight; pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-xlabel(xlabelStr); ylabel(ylabelStrP);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('Mean values MOoP vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-%% Plot TwSS side-to-side tower-top displacement
-hf = figure(hf.Number + 2);
-ylabelStrP = 'TwSS (m)';
-
-plot(noYaw,squeeze(towerSSMatrix(end,:,1:nT)));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrP);xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('Last tower-top SS deflection at %2.1f s vs. yaw',aTable.Time(end)))
-
-hf = figure(hf.Number + 2);
-plot(noYaw,abs(squeeze(mean((towerSSMatrix(timeVec,:,1:nT))))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-xlabel(xlabelStr); ylabel(ylabelStrP);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('tower-top SS deflection vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-%% Plot TwFA fore-aft tower-top displacement
-hf = figure(hf.Number + 2);
-ylabelStrP = 'TwFA (m)';
-
-plot(noYaw,squeeze(towerFAMatrix(end,:,1:nT)));
-grid on; axis tight;% pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrP);xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('Last fore-aft tower-top displacement at %2.1f s vs. yaw',aTable.Time(end)))
-
-hf = figure(hf.Number + 2);
-plot(noYaw,abs(squeeze(mean((towerFAMatrix(timeVec,:,1:nT))))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-xlabel(xlabelStr); ylabel(ylabelStrP);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('tower fore-aft tower-top displacement vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-%% tower-top / yaw bearing roll moment
-hf = figure(hf.Number + 3);
-ylabelStrP = 'TwrSS (kNm)';
-
-subplot(3,1,1)
-plot(noYaw,abs(squeeze(mean(towerMxMatrix(timeVec,:,1:nT)))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrP);xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('tower-top / yaw bearing roll moment vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-subplot(3,1,2)
-plot(noYaw,abs(squeeze(mean(towerMyMatrix(timeVec,:,1:nT)))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel('TwrFA (kNm)');xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('tower-top / yaw bearing pitch moment vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-subplot(3,1,3)
-plot(noYaw,abs(squeeze(mean(towerMzMatrix(timeVec,:,1:nT)))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel('TwrTorque (kNm)');xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('tower-top / yaw bearing yaw moment vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-
-
-%% moment caused by side-to-side, foreaft and torsional (Tower base)
-hf = figure(hf.Number + 3);
-ylabelStrP = 'TwrSS (kNm)';
-
-subplot(3,1,1)
-plot(noYaw,abs(squeeze(mean(towerBMxMatrix(timeVec,:,1:nT)))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel(ylabelStrP);xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('Tower base moment caused by side-to-side forces: %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-subplot(3,1,2)
-plot(noYaw,abs(squeeze(mean(towerBMyMatrix(timeVec,:,1:nT)))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel('TwrFA (kNm)');xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('Tower base moment caused by fore-aft forces: %2.1f to %2.1f s', t0,aTable.Time(end)))
-subplot(3,1,3)
-plot(noYaw,abs(squeeze(mean(towerBMzMatrix(timeVec,:,1:nT)))));
-grid on; axis tight; %pos1 = axis; axis([pos1(1:2),0,pos1(4)*1.1])
-ylabel('TwrTorque (kNm)');xlabel(xlabelStr);
-legend('WT1','WT2','Location','SouthEast')
-title(sprintf('Tower base yaw (or torsional) moment  vs. yaw : %2.1f to %2.1f s', t0,aTable.Time(end)))
-
-%% Reset plotting properties to default
-set(0,'DefaultAxesFontSize', dAFS);
+%% Figure 1: Set plotting properties  and plot side-by-side moments
+set(0,'DefaultAxesFontSize', 12);
+set(0,'DefaultTextFontSize',12);
+set(0,'DefaultLineLineWidth',0.7);
+fs = 12; 
+noF = 1;
+noF = plotFigurePwrMntX(xlabelStr,ylabelStr,noYaw, timeVec, genPwrFarm,....
+    genPwrMatrix, towerBMxMatrix, outmidName,dirFig,fs,noF);
+
+
+%% Figure 2: Reset plotting properties to default and plot all tower base moments
+set(0,'DefaultAxesFontSize',dAFS);
 set(0,'DefaultTextFontSize',dTFS);
 set(0,'DefaultLineLineWidth',dLLw);
+noF = plotFigurePwrMnts1(xlabelStrTex,ylabelStr, titleStr, noYaw, timeVec,...
+    genPwrFarm,genPwrMatrix, towerBMxMatrix,towerBMyMatrix, towerBMzMatrix, ...
+    outmidName,dirFig,noF);
+
+%%  Figure 3: Reset plotting properties to default and plot all tower base moments
+noF = plotFigurePwrMntsBT(xlabelStrTex,ylabelStr, titleStr, noYaw, timeVec,...
+    genPwrFarm,genPwrMatrix, towerBMxMatrix,towerBMyMatrix, towerBMzMatrix,...
+    towerMxMatrix,towerMyMatrix, towerMzMatrix,outmidName,dirFig,noF);
+
+%% Figure 4: Plot all tower base moments in seven subplots
 
