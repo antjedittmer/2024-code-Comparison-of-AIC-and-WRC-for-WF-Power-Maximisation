@@ -1,9 +1,8 @@
-# 2023-code-IFAC-Koopman Model Predictive Control for Wind Farm Yield Optimization with Combined Thrust and Yaw Control
+# 2024-code-Comparison-and-Combination-of-Axial-Induction-and-Wake-Redirection-Control-for-Wind-Farm-Power-Output-Maximisation-and-Grid-Power-Reference-Tracking
 
 ## General
 
 This folder contains supplementary documentation and code to reproduce the results and figures presented in the paper 
-
 
 > A. Dittmer, B. Sharan and H. Werner, "Comparison and Combination of Axial Induction and Wake Redirection Control for Wind Farm Power Output Maximisation and Grid Power Reference Tracking"
 
@@ -11,18 +10,21 @@ accepted at the 23rd Wind & Solar Integration Workshop, 2024.
 
 It may be used to recreate the simulation results and figures from the paper. To do so, run the script `mainGeneratePlotsWISO.m`.
 
-Running the simulation for the first time takes roughly 20 minutes using a laptop with an 11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz processor.
-
-## Optimization Environment
-FLORIS (FLOw Redirection and Induction in Steady State) available [on GitHub](https://github.com/NREL/floris) is utilized for yaw optimization in steady-state. 
+Running the simulation for the first time takes roughly 20 minutes using a laptop with an 11th Gen Intel(R) Core(TM) i7-11850H @ 2.50GHz processor. 
+This is due to data in WFSim beiing generated to design the Koopman matrix used in the Koopman MPC. Once the Koopman matrix is generated the figures are generated in approximately one minute.
+The output of the FLORIS optimization and the FAST.FArm simulation is provided as *.mat files.  
 
 ## Simulation Environment WFSim
 
 The simulations WindFarmSimulator (WFSim) developed by Doekemeijer and Boersma [on GitHub](https://github.com/TUDelft-DataDrivenControl/WFSim) is utilized.
 WFSim is used both for data generation in open loop and for closed loop testing.
 
+## Optimization Environment
+FLORIS (FLOw Redirection and Induction in Steady State) from NREL (National Renewable Energy Laboratory) is available [on GitHub](https://github.com/NREL/floris) is utilized for yaw optimization in steady-state. 
+
+
 ## Simulation Environment FAST.Farm
-The simulation FAST.Farm is part of OpenFAST and available here [on GitHub](https://github.com/OpenFAST/openfast). It is used for load analysis.
+The simulation FAST.Farm is part of OpenFAST from NREL and available here [on GitHub](https://github.com/OpenFAST/openfast). It is used for load analysis.
 
 ## Evaluation 
 
