@@ -20,7 +20,6 @@ end
 a_vec = max(min(a_vec,0.5),0);
 
 
-
 %% Calculate power of each turbine based on wind and wakes
 m = length(a_vec);
 c = c(1:m,1:m);

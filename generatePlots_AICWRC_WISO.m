@@ -20,10 +20,9 @@ if ~isfolder(datDir)
     mkdir(datDir)
 end
 
-
-loadAIC = 1;
+loadAIC = 0;
 loadWRC = 1;
-printText = 0;
+printText = 0; % prints the text 
 
 pWTWRCfile = fullfile(datDir,'pWTopt_WRC.mat');
 pWTAICfile = fullfile(datDir,'pWTopt_AIC.mat');
@@ -33,8 +32,11 @@ mainDir = fileparts(mfilename('fullpath'));
 dirCode = fullfile(mainDir,'ParkGaussianFlorisFASTFarm');
 addpath(dirCode)
 dirFigures = fullfile(mainDir,figDir);
+
+
 dirProject = fileparts(fileparts(fileparts(dirCode))); % this is my main project folder
-dirFloris =  'DataInFloris'; %fullfile(dirProject,'floris','examples');
+dirFloris = fullfile(dirProject,'floris','examples');
+dirFloris =  'DataInFloris'; 
 
 dirFASTFarm = fullfile(dirCode,'BinduFASTFarm');
 dirFASTFarmFigDir = fullfile(dirFASTFarm, 'Figures');
@@ -45,7 +47,7 @@ dAFS = get(0,'DefaultAxesFontSize');
 dTFS = get(0,'DefaultTextFontSize');
 dLLw = get(0,'DefaultLineLineWidth');
 
-%% Define the parameters
+%% Set the wind farm parameters
 rho = 1.225; % air density
 D   = 126; % diameter of each turbine assumed to be same
 A   = pi * (D/2)^2; % area swept by the rotor
@@ -449,6 +451,9 @@ else
     PT_opt = nan(mEnd,1);
     PT_greedy = nan(mEnd,1);
 
+    normDiff = nan(mEnd,1);
+    HessCell = cell(mEnd,1);
+    eigHessPos = nan(mEnd,1);
     for m = 2 : mEnd
         c = zeros(m);
         x = -(0:1:(m-1))* 5*D; %
@@ -460,8 +465,12 @@ else
         end
         a_vec0 = a * ones(m,1);
 
-        a_opt = fmincon(@(a_vec) - calculate_PT(a_vec,c,rho,A,Vinf), a_vec0,[],[],[],[], zeros(size(a_vec0)), amax *ones(size(a_vec0)));
-        [PT_opt(m), P_opt, Vopt] = calculate_PT(a_opt, c, rho, A, Vinf);
+        [a_opt,~,~,~,~,GRAD,HESSIAN] = fmincon(@(a_vec) - calculate_PT(a_vec,c,rho,A,Vinf), a_vec0,[],[],[],[], zeros(size(a_vec0)), amax *ones(size(a_vec0)));
+        a_opt1 = fminsearch(@(a_vec) - calculate_PT(a_vec,c,rho,A,Vinf), (a_vec0 + a_opt)/2);
+        normDiff(m) = norm(a_opt - a_opt1);
+        HessCell{m} = HESSIAN;
+        eigHessPos(m) = any(eig(HESSIAN)<0);
+        [PT_opt(m), P_opt, Vopt] = calculate_PT(a_opt, c, rho, A, Vinf); % 
         [PT_greedy(m), P_greedy] = calculate_PT(1/3*ones(size(a_vec0)), c, rho, A, Vinf);
         %ratioP(m) = (PT_opt(m) - PT_greedy(m))/PT_greedy(m);
         aCell{m} = a_opt;
@@ -531,11 +540,14 @@ perMoreWRC = 100*(Popt - P0)./P0;
 ratioP = (PT_opt - PT_greedy)./PT_greedy;
 cl = lines;
 
-WRC_floris_unused= [7.39100391 15.053566   18.54092809 20.90854975 23.10266198 24.97313607,...
+WRC_floris = [7.39100391 15.053566   18.54092809 20.90854975 23.10266198 24.97313607,...
     26.56170468 28.05012005 29.50473681];
 
 WRC_floris = [ 7.46446676 16.4140829  20.43789747 23.01275746 25.24222557 27.10788875,...
     28.59286803 29.99725078 31.40874593];
+
+% [ 7.39100391 15.053566   18.54092809 20.90854975 23.10266198 24.97313607
+%  26.56170468 28.05012005 29.50473681]
 
 mEnd = length(perMoreWRC);
 
@@ -732,9 +744,12 @@ set(0,'DefaultLineLineWidth',0.7);
 tiledlayout(1,3,'TileSpacing','compact')
 set(gcf,'position',[pos0(1:3),pos0(4)*1.11])
 
+vecX2 = ldyy(1,idxY);
+vecY2 = ldxx2(idxX,1)';
+
 yStr = 'y (m)';
 nexttile
-contourf(ldyy(1,idxY),ldxx2(idxX,1)',sol.u(idxX,idxY),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
+contourf(vecX2,vecY2,sol.u(idxX,idxY),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
 colormap(hot); caxis([min(min(sol.u))-2 u_Inf*1.05]);  hold on; colorbar;
 xlabel(yStr); ylabel('x (m)')
 if printText == 1
@@ -758,20 +773,28 @@ axis equal; axis tight;
 % Get the mat file containing the 3-turbine array
 idx3 = contains(whatFloris.mat,'3') & contains(whatFloris.mat,'cc');
 mat3 = whatFloris.mat{idx3};
-tmp = load(fullfile(dirFloris,mat3));
-idxX = 1:size(tmp.x1_mesh,2);
-idxY = 1:size(tmp.x1_mesh,1);
-ldyy = tmp.x2_mesh';
-ldxx2 = tmp.x1_mesh';
-sol.u = tmp.vecU_0';
+tmp3 = load(fullfile(dirFloris,mat3));
+idxX3 = 1:size(tmp3.x1_mesh,2);
+idxY3 = 1:size(tmp3.x1_mesh,1);
+ldyy3 = tmp3.x2_mesh';
+ldxx2_3 = tmp3.x1_mesh';
+sol.u = tmp3.vecU_0';
 u_Inf = max(sol.u(:));
 
+vecx3 = ldyy3(1,idxY3);
+vecy3 = ldxx2_3(idxX3,1)';
+idx3_2 = vecy3 <= vecY2(end);
+idxX3_2 = idxX3; %(idx3_2);
+%vecy3_2 = vecy3()
+
+% [vecy3_2,idx3_2]  =  intersect(vecy3,vecY2);
+
 sol.u = tmp.vecU_opt';nexttile
-contourf(ldyy(1,idxY),ldxx2(idxX,1)',sol.u(idxX,idxY),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
+contourf(vecx3,ldxx2_3(idxX3_2,1)',sol.u(idxX3_2,idxY3),(u_min:0.1:u_Inf*1.05),'Linecolor','none');
 colormap(hot); caxis([min(min(sol.u))-2 u_Inf*1.05]);  hold on; hc = colorbar;
 xlabel(yStr);
 if printText == 1
-text(min(ldyy(1,idxY))*0.95, max(ldxx2(idxX,1))*0.95, sprintf('%2.2f MW',tmp.farm_power_opt/10^6),'Fontsize',9)
+text(min(ldyy(1,idxY_3))*0.95, max(ldxx2(idxX_3,1))*0.95, sprintf('%2.2f MW',tmp.farm_power_opt/10^6),'Fontsize',9)
 end
 axis equal; axis tight;
 
