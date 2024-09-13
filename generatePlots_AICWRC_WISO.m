@@ -20,7 +20,7 @@ if ~isfolder(datDir)
     mkdir(datDir)
 end
 
-loadAIC = 1;
+loadAIC = 0;
 loadWRC = 1;
 printText = 0; % prints the text 
 
@@ -475,7 +475,7 @@ else
         %ratioP(m) = (PT_opt(m) - PT_greedy(m))/PT_greedy(m);
         aCell{m} = a_opt;
     end
-    save(pWTAICfile,'PT_opt','PT_greedy','aCell');
+    save(pWTAICfile,'PT_opt','PT_greedy','aCell', 'HessCell','normDiff');
 end
 ratioP = (PT_opt - PT_greedy)./PT_greedy;
 
